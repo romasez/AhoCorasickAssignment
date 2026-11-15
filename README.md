@@ -1,63 +1,35 @@
-# Aho-Corasick Algorithm in Java
+# Aho-Corasick Algorithm — Experiment Report
 
-A simple second-year university project that searches for multiple patterns in one text and compares Aho-Corasick with KMP.
+## 1. Objective
 
-## Project files
+The goal is to implement the Aho-Corasick algorithm and compare it with the KMP algorithm. The program searches for all occurrences of multiple patterns in a text.
 
-- `src/AhoCorasick.java` — trie, failure links, outputs, and all match positions.
-- `src/KMP.java` — KMP search for each pattern separately.
-- `src/TestCases.java` — 7 correctness tests, including overlapping and duplicate patterns.
-- `src/Benchmark.java` — 9 experiments, each run 5 times.
-- `results/benchmark.csv` — actual benchmark results.
-- `REPORT.md` — short experiment report.
-- `HANDWRITTEN_EXPLANATION.md` — text to rewrite by hand in your own words.
+## 2. Implementation
 
-## How to run
+I created a trie from all the patterns. Every node has child nodes, a failure link, and a list of pattern IDs that end at this node. Failure links are built with breadth-first search. During searching, the program reads the text one character at a time and follows failure links when necessary. For comparison, KMP searches the same text separately for each pattern.
 
-Requires Java 17 or newer. From the project folder:
+## 3. Test Method
 
-```bash
-javac -d out src/*.java
-java -cp out TestCases
-java -cp out Benchmark
-```
+I used 10, 100, and 1,000 patterns and text lengths of 1,000, 10,000, and 100,000. The text and patterns were generated using a fixed random seed. Each test was warmed up 3 times and measured 5 times with `System.nanoTime()`. The average includes building the search structure and searching the text. Both implementations returned the same match counts.
 
-The benchmark automatically rewrites `results/benchmark.csv` with results from your computer.
+## 4. Results
 
-## How it works
+| Patterns | Text length | Aho-Corasick (ms) | KMP (ms) |
+|---:|---:|---:|---:|
+| 10 | 1,000 | 0.3927 | 0.6520 |
+| 10 | 10,000 | 0.8889 | 0.4873 |
+| 10 | 100,000 | 1.5223 | 3.9556 |
+| 100 | 1,000 | 0.7547 | 0.4007 |
+| 100 | 10,000 | 0.8234 | 3.9481 |
+| 100 | 100,000 | 2.6900 | 42.4513 |
+| 1,000 | 1,000 | 1.6618 | 3.8804 |
+| 1,000 | 10,000 | 2.0729 | 44.3854 |
+| 1,000 | 100,000 | 3.2356 | 411.6796 |
 
-1. **Trie:** Every pattern is inserted into the trie. Patterns that share prefixes share nodes.
-2. **Failure links:** Breadth-first search builds links to the longest available suffix when a trie transition cannot continue.
-3. **Outputs:** Each node stores pattern IDs that end there. A node also inherits output IDs from its failure node, so suffix matches are not missed.
-4. **Search:** Scan the text once. Follow trie transitions or failure links and report all matching patterns and their starting indexes (zero-based).
+## 5. Complexity
 
-For example, with text `ahishers` and patterns `he`, `she`, `his`, `hers`, the program can find all four matching occurrences, including the overlap between `she` and `he`.
+If `n` is the text length, `p` is the number of patterns, `S` is their total length, and `z` is the number of matches, Aho-Corasick searching takes `O(n + z)` after preprocessing. Standard trie and failure construction is approximately `O(S)` for a fixed alphabet. Trie nodes require `O(S)` memory, but this program also copies match lists from failure nodes, which can use extra memory. Running KMP separately takes `O(p * n + S)` time.
 
-## Complexity
+## 6. Discussion and Conclusion
 
-Let `n` = text length, `p` = number of patterns, `S` = total length of all patterns, and `z` = number of matches.
-
-- **Aho-Corasick search:** `O(n + z)` after preprocessing, using amortized failure transitions.
-- **Trie/failure link preprocessing:** commonly described as `O(S)` for a fixed-size alphabet and standard construction; actual costs depend on how trie transitions and outputs are represented.
-- **Memory:** `O(S)` for trie nodes and failure pointers, plus stored output lists. This implementation copies failure outputs into nodes; in the worst case, these duplicated output IDs can require `O(S * p)` additional storage. A separate output-link implementation can reduce this overhead.
-- **KMP for all patterns:** `O(p * n + S)` total time, `O(maximum pattern length)` working memory when patterns are processed one by one, excluding the input and stored matches.
-
-## Comparison
-
-Aho-Corasick preprocesses all patterns together and scans the text once, making it useful for keyword filtering, dictionary matching, and detecting many terms in a document. KMP is simpler and can use less memory for one or a few patterns, but repeating KMP for every pattern scans the same text many times.
-
-## Experimental setup
-
-- Patterns: 10, 100, 1,000.
-- Text lengths: 1,000, 10,000, 100,000 characters.
-- Input: repeatable seeded random lowercase English letters; pattern lengths 5–12; up to 20 patterns inserted into each text.
-- Runs: 3 unmeasured warm-up iterations, then 5 measured iterations per case.
-- Timing: `System.nanoTime()`; averages reported in milliseconds.
-- Timing includes pattern preprocessing and searching for both algorithms; printing and data generation are excluded.
-- Correctness: matched-occurrence counts are compared during every benchmark run.
-
-Results are machine-dependent and can vary because of JIT compilation, garbage collection, and operating system scheduling. See `REPORT.md` and `results/benchmark.csv`.
-
-## Submission
-
-Create your own GitHub repository, upload the project contents, and submit your repository link in Moodle. Write the handwritten explanation separately on paper and include it with the submission as instructed by your teacher.
+For a small number of patterns, the algorithms had similar results, and KMP was faster in two small tests. When the number of patterns increased, Aho-Corasick became much faster because it scans the text only once. For 1,000 patterns and 100,000 characters, Aho-Corasick took about 3.24 ms, while KMP took about 411.68 ms. Aho-Corasick is a good choice for many patterns, while KMP is easier and may be preferable for one pattern. Exact timings depend on the computer and JVM.
